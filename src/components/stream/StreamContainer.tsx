@@ -1,6 +1,11 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useMatchClock } from '../../hooks/useMatchClock';
+import {
+  callYouTubePlayer,
+  readYouTubePlayerNumber,
+  type InitializingYouTubePlayer,
+} from './youtubePlayer';
 import './styles.css';
 
 declare global {
@@ -29,7 +34,7 @@ interface StreamContainerProps {
 
 export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerProps>(
   ({ children, youtubeId, videoSrc, onTimeUpdate, onStateChange }, ref) => {
-    const playerRef = useRef<YT.Player | null>(null);
+    const playerRef = useRef<InitializingYouTubePlayer | null>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -46,14 +51,14 @@ export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerPro
       if (videoSrc && videoRef.current) {
         return videoRef.current.currentTime;
       }
-      return playerRef.current?.getCurrentTime() ?? 0;
+      return readYouTubePlayerNumber(playerRef.current, 'getCurrentTime', 0);
     }, [videoSrc]);
 
     const getDuration = useCallback(() => {
       if (videoSrc && videoRef.current) {
         return videoRef.current.duration || 0;
       }
-      return playerRef.current?.getDuration() ?? 0;
+      return readYouTubePlayerNumber(playerRef.current, 'getDuration', 0);
     }, [videoSrc]);
 
     const handleTick = useCallback((currentTime: number, duration: number) => {
@@ -85,21 +90,21 @@ export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerPro
         if (videoSrc && videoRef.current) {
           void videoRef.current.play();
         } else {
-          playerRef.current?.playVideo();
+          callYouTubePlayer(playerRef.current, 'playVideo');
         }
       },
       pause: () => {
         if (videoSrc && videoRef.current) {
           videoRef.current.pause();
         } else {
-          playerRef.current?.pauseVideo();
+          callYouTubePlayer(playerRef.current, 'pauseVideo');
         }
       },
       seekTo: (seconds: number) => {
         if (videoSrc && videoRef.current) {
           videoRef.current.currentTime = seconds;
         } else {
-          playerRef.current?.seekTo(seconds, true);
+          callYouTubePlayer(playerRef.current, 'seekTo', seconds, true);
         }
         syncRef.current();
       },
@@ -109,7 +114,11 @@ export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerPro
         if (videoSrc && videoRef.current) {
           return videoRef.current.paused ? 2 : 1;
         }
-        return playerRef.current?.getPlayerState() ?? -1;
+        return readYouTubePlayerNumber(
+          playerRef.current,
+          'getPlayerState',
+          -1,
+        );
       },
     }));
 
@@ -179,6 +188,7 @@ export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerPro
           },
           events: {
             onReady: (event) => {
+              playerRef.current = event.target;
               event.target.playVideo();
               applyPlaybackState(true);
             },
@@ -196,7 +206,7 @@ export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerPro
       }
 
       return () => {
-        playerRef.current?.destroy();
+        callYouTubePlayer(playerRef.current, 'destroy');
       };
     }, [youtubeId, applyPlaybackState]);
 

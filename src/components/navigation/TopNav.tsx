@@ -11,7 +11,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { id: 'live', label: 'Live Match', isLive: true },
   { id: 'home', label: 'Home' },
-  { id: 'football', label: 'Football' },
+  { id: 'tennis', label: 'Tennis' },
   { id: 'nba', label: 'NBA' },
   { id: 'esports', label: 'Esports' },
 ];

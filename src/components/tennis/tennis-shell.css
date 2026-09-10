@@ -1,0 +1,386 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --hawk-ink: #070b0a;
+  --hawk-green: #083b2a;
+  --hawk-chalk: #edf1e8;
+  --hawk-muted: #99a49c;
+  --hawk-optic: #dfff32;
+  --hawk-out: #ff5a3c;
+}
+
+.tennis-scoreboard {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  min-width: min(34rem, calc(100vw - 8rem));
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--hawk-chalk);
+  background:
+    linear-gradient(180deg, rgba(8, 59, 42, 0.92), rgba(7, 11, 10, 0.94));
+  border: 1px solid rgba(237, 241, 232, 0.16);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(18px);
+  transform: translateX(-50%);
+}
+
+.tennis-scoreboard__player {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  padding: 0.55rem 0.85rem 0.62rem;
+}
+
+.tennis-scoreboard__player--far {
+  text-align: right;
+}
+
+.tennis-scoreboard__name {
+  overflow: hidden;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: 0.06em;
+  line-height: 0.95;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tennis-scoreboard__meta {
+  color: var(--hawk-muted);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tennis-scoreboard__points {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  align-items: center;
+  min-width: 6.8rem;
+  background: rgba(7, 11, 10, 0.55);
+  border-left: 1px solid rgba(223, 255, 50, 0.55);
+  border-right: 1px solid rgba(223, 255, 50, 0.55);
+  font-family: 'Geist Mono', monospace;
+  font-size: 1.35rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.tennis-scoreboard__points span {
+  padding: 0.35rem 0.5rem;
+}
+
+.tennis-scoreboard__points span.is-game {
+  color: var(--hawk-optic);
+}
+
+.tennis-scoreboard__rule {
+  height: 1.6rem;
+  background: rgba(223, 255, 50, 0.55);
+}
+
+  .camera-rail {
+  position: absolute;
+  bottom: 92px;
+  left: 50%;
+  z-index: 35;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.42rem 0.48rem;
+  pointer-events: auto;
+  background: rgba(7, 11, 10, 0.82);
+  border: 1px solid rgba(237, 241, 232, 0.14);
+  border-radius: 4px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+  transform: translateX(-50%);
+}
+
+.camera-rail__chip,
+.camera-rail__action {
+  padding: 0.42rem 0.62rem;
+  color: rgba(237, 241, 232, 0.78);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.camera-rail__chip:hover,
+.camera-rail__action:hover,
+.camera-rail__chip:focus-visible,
+.camera-rail__action:focus-visible {
+  color: var(--hawk-optic);
+  border-color: rgba(223, 255, 50, 0.45);
+  outline: none;
+}
+
+.camera-rail__chip.is-active,
+.camera-rail__action.is-active {
+  color: var(--hawk-ink);
+  background: var(--hawk-optic);
+}
+
+.camera-rail__kicker {
+  padding: 0 0.35rem;
+  color: var(--hawk-muted);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.48rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.camera-rail__split {
+  width: 1px;
+  height: 1.1rem;
+  background: rgba(237, 241, 232, 0.16);
+}
+
+.camera-card {
+  --pov-card-width: 16.5rem;
+  bottom: 6.2rem;
+}
+
+.camera-card--preset {
+  left: clamp(1.25rem, 3vw, 3.5rem);
+}
+
+.camera-card--placed {
+  right: clamp(1.25rem, 3.5vw, 4rem);
+}
+
+.camera-card__controls {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.45rem 0.7rem 0.6rem;
+  pointer-events: auto;
+}
+
+.camera-card__controls label {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  color: var(--hawk-muted);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.48rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.camera-card__controls input[type='range'] {
+  width: 5.5rem;
+  accent-color: var(--hawk-optic);
+}
+
+.camera-stack {
+  position: absolute;
+  right: clamp(1.25rem, 3.5vw, 4rem);
+  bottom: 6.2rem;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  pointer-events: none;
+}
+
+.camera-stack .pov-card {
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
+}
+
+.tennis-fullscreen {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.tennis-fullscreen--replay {
+  z-index: 70;
+}
+
+.tennis-fullscreen--ghost {
+  z-index: 60;
+}
+
+.tennis-fullscreen__view {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+.tennis-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.tennis-hud > * {
+  pointer-events: auto;
+}
+
+.ghost-hud__crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--hawk-optic);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.ghost-hud__legend,
+.placement-hud__copy,
+.replay-hud__panel {
+  position: absolute;
+  padding: 0.7rem 0.85rem;
+  color: var(--hawk-chalk);
+  background: rgba(7, 11, 10, 0.82);
+  border: 1px solid rgba(237, 241, 232, 0.14);
+  border-radius: 4px;
+  backdrop-filter: blur(16px);
+  font-family: 'Geist Mono', monospace;
+}
+
+.ghost-hud__legend {
+  top: 1.2rem;
+  left: 1.2rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  text-transform: uppercase;
+}
+
+.ghost-hud__freeze {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  color: var(--hawk-optic);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.placement-hud__copy {
+  top: 1.2rem;
+  left: 50%;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+}
+
+.placement-hud__tools,
+.replay-hud__panel {
+  right: 1.2rem;
+  bottom: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 16rem;
+}
+
+.replay-hud__panel {
+  left: 1.2rem;
+  right: auto;
+}
+
+.replay-hud__callout {
+  color: var(--hawk-optic);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.replay-hud__label {
+  color: var(--hawk-muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.replay-hud__scrub {
+  width: 100%;
+  accent-color: var(--hawk-optic);
+}
+
+.replay-hud__speeds,
+.replay-hud__angles,
+.placement-hud__tools,
+.ghost-hud__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.hawk-button {
+  padding: 0.4rem 0.6rem;
+  color: var(--hawk-chalk);
+  background: rgba(8, 59, 42, 0.7);
+  border: 1px solid rgba(223, 255, 50, 0.28);
+  border-radius: 3px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.hawk-button:hover,
+.hawk-button:focus-visible,
+.hawk-button.is-active {
+  color: var(--hawk-ink);
+  background: var(--hawk-optic);
+  outline: none;
+}
+
+.hawk-button--ghost {
+  background: transparent;
+}
+
+@media (max-width: 900px) {
+  .tennis-scoreboard {
+    min-width: calc(100vw - 2rem);
+  }
+
+  .camera-rail {
+    bottom: 18px;
+    max-width: calc(100vw - 1.2rem);
+    overflow-x: auto;
+  }
+
+  .camera-card,
+  .camera-stack {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tennis-scoreboard,
+  .camera-rail,
+  .hawk-button {
+    transition: none;
+  }
+}
