@@ -22,6 +22,7 @@ export interface StreamContainerRef {
   getCurrentTime: () => number;
   getDuration: () => number;
   getPlayerState: () => number;
+  getVideoElement: () => HTMLVideoElement | null;
 }
 
 interface StreamContainerProps {
@@ -30,10 +31,11 @@ interface StreamContainerProps {
   videoSrc?: string;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   onStateChange?: (isPlaying: boolean) => void;
+  onVideoElement?: (video: HTMLVideoElement | null) => void;
 }
 
 export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerProps>(
-  ({ children, youtubeId, videoSrc, onTimeUpdate, onStateChange }, ref) => {
+  ({ children, youtubeId, videoSrc, onTimeUpdate, onStateChange, onVideoElement }, ref) => {
     const playerRef = useRef<InitializingYouTubePlayer | null>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -120,6 +122,7 @@ export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerPro
           -1,
         );
       },
+      getVideoElement: () => (videoSrc ? videoRef.current : null),
     }));
 
     // Handle native video element
@@ -155,13 +158,16 @@ export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerPro
         video.addEventListener('loadeddata', syncNativePlaybackState, { once: true });
       }
 
+      onVideoElement?.(video);
+
       return () => {
         video.removeEventListener('play', handlePlay);
         video.removeEventListener('pause', handlePause);
         video.removeEventListener('seeked', handleSeeked);
         video.removeEventListener('loadeddata', syncNativePlaybackState);
+        onVideoElement?.(null);
       };
-    }, [videoSrc, applyPlaybackState]);
+    }, [videoSrc, applyPlaybackState, onVideoElement]);
 
     useEffect(() => {
       if (!youtubeId) return;
@@ -224,6 +230,9 @@ export const StreamContainer = forwardRef<StreamContainerRef, StreamContainerPro
               muted
               loop
               playsInline
+              onLoadedMetadata={(event) => {
+                onVideoElement?.(event.currentTarget);
+              }}
             />
           ) : (
             <div className="stream-video-placeholder">

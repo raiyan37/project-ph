@@ -22,7 +22,10 @@ import {
   type CompiledPoint,
 } from '../data/tennis/match';
 import { useMatchState } from '../hooks/useMatchState';
+import { usePovManifest } from '../hooks/usePovManifest';
 import { replayMeasurement } from '../lib/tennis/replay';
+import { resolveStreamMedia } from '../lib/tennis/streamMedia';
+import { PovReconstructionProvider } from '../scene/pointcloud/PovReconstruction';
 import { createPlacedCamera, type PlacedCamera } from '../scene/cameras/placement';
 import {
   PRESET_CAMERA_IDS,
@@ -49,12 +52,18 @@ export function StreamPage() {
   const [ghostMode, setGhostMode] = useState(false);
   const [worldFrozen, setWorldFrozen] = useState(false);
   const [replayPoint, setReplayPoint] = useState<CompiledPoint | null>(null);
+  const [rgbVideo, setRgbVideo] = useState<HTMLVideoElement | null>(null);
 
   const streamRef = useRef<StreamContainerRef>(null);
   const liveTime = useRef(0);
   const sceneTime = useRef(0);
   const lastUIClockUpdateRef = useRef(-Infinity);
   const compiledMatch = useMemo(() => getCompiledTennisMatch(), []);
+  const { manifest, loaded: mediaLoaded } = usePovManifest();
+  const streamMedia = useMemo(
+    () => resolveStreamMedia(manifest, TENNIS_MATCH.source.youtubeId),
+    [manifest],
+  );
   const replayOpen = replayPoint !== null;
   const worldFrozenRef = useRef(false);
   const replayOpenRef = useRef(false);
@@ -172,15 +181,31 @@ export function StreamPage() {
     announce('Pinned camera added.', 'polite');
   };
 
+  if (!mediaLoaded) {
+    return (
+      <div className="app">
+        <AccessibilityToggle />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <StreamContainer
         ref={streamRef}
-        youtubeId={TENNIS_MATCH.source.youtubeId}
+        youtubeId={streamMedia.youtubeId}
+        videoSrc={streamMedia.videoSrc}
         onTimeUpdate={handleTimeUpdate}
         onStateChange={handleStateChange}
+        onVideoElement={setRgbVideo}
       >
-        <SceneRoot className="tennis-pov-layer">
+        <PovReconstructionProvider
+          manifest={manifest}
+          rgbVideo={rgbVideo}
+          timeSource={sceneTime}
+          playing={isPlaying && !replayOpen}
+        >
+          <SceneRoot className="tennis-pov-layer">
           <div className="tennis-pov-cards">
             <POVCard
               side="near"
@@ -272,7 +297,8 @@ export function StreamPage() {
               onDismiss={dismissReplay}
             />
           ) : null}
-        </SceneRoot>
+          </SceneRoot>
+        </PovReconstructionProvider>
 
         <TennisScoreboard
           match={compiledMatch.match}

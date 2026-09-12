@@ -30,3 +30,9 @@ venv/
 
 # ML model weights
 *.pt
+
+# Reconstructed POV media. Keep the small synthetic demo clip.
+public/tennis/pov/**
+!public/tennis/pov/manifest.json
+!public/tennis/pov/rgb.mp4
+!public/tennis/pov/depth.webm

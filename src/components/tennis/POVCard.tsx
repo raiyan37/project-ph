@@ -4,9 +4,11 @@ import {
   getActiveTrajectoryAtTime,
   type MatchTimeSource,
 } from '../../lib/tennis/animation';
+import { getPovSampleTime } from '../../lib/tennis/streamMedia';
 import type { ShotPlayerSide } from '../../lib/tennis/trajectory';
-import { CourtViewport } from '../../scene/SceneRoot';
-import { PlayerPOVCamera } from '../../scene/cameras/PlayerPOVCamera';
+import { CloudViewport } from '../../scene/pointcloud/CloudViewport';
+import { usePovReconstruction } from '../../scene/pointcloud/PovReconstruction';
+import { interpolatePovTrack } from '../../scene/pointcloud/tracks';
 import './pov-card.css';
 
 interface CurrentPOVStat {
@@ -17,10 +19,15 @@ interface CurrentPOVStat {
 function currentPOVStat(
   mediaTime: number,
   compiledMatch: CompiledTennisMatch,
+  hasTrack: boolean,
 ): CurrentPOVStat {
+  if (!hasTrack) {
+    return { label: 'Court lock', value: 'Standby' };
+  }
+
   const active = getActiveTrajectoryAtTime(mediaTime, compiledMatch);
   if (!active) {
-    return { label: 'Court lock', value: 'Standby' };
+    return { label: 'Court lock', value: 'Locked' };
   }
 
   const crossing = active.trajectory.netCrossing;
@@ -54,10 +61,16 @@ export function POVCard({
   className,
 }: POVCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const reconstruction = usePovReconstruction();
   const player = compiledMatch.match.players[side];
+  const pose = interpolatePovTrack(
+    reconstruction?.manifest.tracks ?? [],
+    getPovSampleTime(currentTime),
+    side,
+  );
   const stat = useMemo(
-    () => currentPOVStat(currentTime, compiledMatch),
-    [compiledMatch, currentTime],
+    () => currentPOVStat(currentTime, compiledMatch, !pose.standby),
+    [compiledMatch, currentTime, pose.standby],
   );
   const viewportId = `pov-${side}-viewport`;
   const expandLabel = expanded ? 'Collapse' : 'Expand';
@@ -83,19 +96,11 @@ export function POVCard({
       </div>
 
       <div id={viewportId} className="pov-card__viewport-shell">
-        <CourtViewport
+        <CloudViewport
           className="pov-card__viewport"
           timeSource={timeSource}
-          compiledMatch={compiledMatch}
-          povSide={side}
+          side={side}
           index={side === 'near' ? 1 : 2}
-          cameraRig={
-            <PlayerPOVCamera
-              side={side}
-              timeSource={timeSource}
-              compiledMatch={compiledMatch}
-            />
-          }
         />
 
         <div className="pov-card__viewfinder" aria-hidden="true">

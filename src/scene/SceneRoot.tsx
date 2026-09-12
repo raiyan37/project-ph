@@ -40,7 +40,7 @@ const VIEW_STYLE: CSSProperties = {
 const CANVAS_STYLE: CSSProperties = {
   position: 'absolute',
   inset: 0,
-  zIndex: 0,
+  zIndex: 5,
   width: '100%',
   height: '100%',
   pointerEvents: 'none',
