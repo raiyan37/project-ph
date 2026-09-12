@@ -1,60 +1,19 @@
-export interface Team {
+export interface TennisSidePlayer {
+  id: string;
   name: string;
   shortName: string;
-  flag: string;
+  country: string;
   color: string;
 }
 
-export interface Match {
+export interface TennisFixture {
   id: string;
-  homeTeam: Team;
-  awayTeam: Team;
-  homeScore: number;
-  awayScore: number;
-  time: string;
-  isLive: boolean;
+  homeTeam: TennisSidePlayer;
+  awayTeam: TennisSidePlayer;
   competition: string;
-}
-
-export interface Player {
-  id: string;
-  name: string;
-  number: number;
-  position: string;
-  team: 'home' | 'away';
-  teamColor: string;
-  avatar: string;
-  stats: PlayerStats;
-  fieldPosition: {
-    x: number;
-    y: number;
-  };
-}
-
-export interface PlayerStats {
-  passes: number;
-  passAccuracy: number;
-  shots: number;
-  shotsOnTarget: number;
-  tackles: number;
-  distance: number;
-  speed: number;
-  sprints: number;
-}
-
-export interface Commentary {
-  id: string;
-  text: string;
+  competitionShort: string;
   time: string;
-  type: 'action' | 'goal' | 'card' | 'general';
-}
-
-export interface NavItem {
-  id: string;
-  label: string;
-  icon?: string;
-  isLive?: boolean;
-  isActive?: boolean;
+  status: 'live' | 'upcoming' | 'replay';
 }
 
 export interface VideoState {
@@ -64,4 +23,12 @@ export interface VideoState {
   volume: number;
   isMuted: boolean;
   isFullscreen: boolean;
+}
+
+export interface NavItem {
+  id: string;
+  label: string;
+  icon?: string;
+  isLive?: boolean;
+  isActive?: boolean;
 }

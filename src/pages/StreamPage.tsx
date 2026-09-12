@@ -1,147 +1,42 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StreamContainer } from '../components/stream/StreamContainer';
 import type { StreamContainerRef } from '../components/stream/StreamContainer';
-import { PenaltyScoreOverlay } from '../components/stream/PenaltyScoreOverlay';
 import { LiveBadge } from '../components/stream/LiveBadge';
 import { VideoControls } from '../components/stream/VideoControls';
-import { PlayerCard } from '../components/player/PlayerCard';
-import { POVVideoOverlay } from '../components/player/POVVideoOverlay';
-import { usePlayerTracking } from '../hooks/usePlayerTracking';
-import { GoalConfetti } from '../components/stream/GoalConfetti';
 import { AccessibilityToggle } from '../components/shared/AccessibilityToggle';
+import { CameraRail } from '../components/tennis/CameraRail';
+import {
+  PlacedCameraCard,
+  PresetCameraCard,
+} from '../components/tennis/CameraCard';
+import { GhostControls } from '../components/tennis/GhostControls';
+import { PlacementMode } from '../components/tennis/PlacementMode';
+import { POVCard } from '../components/tennis/POVCard';
+import { ReplayOverlay } from '../components/tennis/ReplayOverlay';
+import { TennisScoreboard } from '../components/tennis/TennisScoreboard';
 import { useAccessibility } from '../contexts/AccessibilityContext';
-import type { Player } from '../types';
-import brunoVideo from '../assets/bruno.mov';
+import {
+  TENNIS_MATCH,
+  getCompiledTennisMatch,
+  type CompiledPoint,
+} from '../data/tennis/match';
+import { useMatchState } from '../hooks/useMatchState';
+import { usePovManifest } from '../hooks/usePovManifest';
+import { replayMeasurement } from '../lib/tennis/replay';
+import { resolveStreamMedia } from '../lib/tennis/streamMedia';
+import { PovReconstructionProvider } from '../scene/pointcloud/PovReconstruction';
+import { createPlacedCamera, type PlacedCamera } from '../scene/cameras/placement';
+import {
+  PRESET_CAMERA_IDS,
+  type PresetCameraId,
+} from '../scene/cameras/presets';
+import { SceneRoot } from '../scene/SceneRoot';
 import '../App.css';
+import '../components/tennis/pov-card.css';
+import '../components/tennis/tennis-shell.css';
 
-// Penalty shootout data - FA Cup 2024/25: Man United vs Arsenal
-const initialPenaltyData = {
-  homeTeam: {
-    name: 'Manchester United',
-    shortName: 'MUN',
-    flag: '',
-    color: '#DA291C',
-  },
-  awayTeam: {
-    name: 'Arsenal',
-    shortName: 'ARS',
-    flag: '',
-    color: '#EF0107',
-  },
-  homePenalties: {
-    scored: 0,
-    taken: 0,
-    saved: 0,
-  },
-  awayPenalties: {
-    scored: 0,
-    taken: 0,
-    saved: 0,
-  },
-  currentRound: 1,
-  isHomeTurn: true,
-};
-
-// Goal event timing
-const GOAL_TIME = 8; // Bruno scores at 8 seconds
-
-// Penalty-specific players - FA Cup 2024/25: Bruno vs Raya (First penalty)
-// Stats will be updated dynamically based on goal state
-const getPlayers = (scored: boolean): Player[] => [
-  {
-    id: 'goalkeeper',
-    name: 'David Raya',
-    number: 22,
-    position: 'Goalkeeper',
-    team: 'away',
-    teamColor: '#F5A623',
-    avatar: '',
-    stats: {
-      passes: 24, // Career PK save %
-      passAccuracy: 0,
-      shots: 0,
-      shotsOnTarget: 0,
-      tackles: 0,
-      distance: 0,
-      speed: 0,
-      sprints: 0,
-    },
-    fieldPosition: { x: 15, y: 50 },
-  },
-  {
-    id: 'penalty-taker',
-    name: 'Bruno Fernandes',
-    number: 8,
-    position: 'Penalty Taker',
-    team: 'home',
-    teamColor: '#3B82F6',
-    avatar: '',
-    stats: {
-      passes: scored ? 93 : 92, // Career conversion % (ticks up after scoring)
-      passAccuracy: 0,
-      shots: 0,
-      shotsOnTarget: 0,
-      tackles: 0,
-      distance: 0,
-      speed: 0,
-      sprints: 0,
-    },
-    fieldPosition: { x: 30, y: 50 },
-  },
-  {
-    id: 'referee',
-    name: 'Anthony Taylor',
-    number: 0,
-    position: 'Referee',
-    team: 'home',
-    teamColor: '#F97316',
-    avatar: '',
-    stats: {
-      passes: 0,
-      passAccuracy: 0,
-      shots: 0,
-      shotsOnTarget: 0,
-      tackles: 0,
-      distance: 0,
-      speed: 0,
-      sprints: scored ? 47 : 46, // Calls made this match (increments on goal signal)
-    },
-    fieldPosition: { x: 50, y: 30 },
-  },
-  {
-    id: 'assistant-referee',
-    name: 'G. Mayfield',
-    number: 0,
-    position: 'Assistant Referee',
-    team: 'home',
-    teamColor: '#F97316',
-    avatar: '',
-    stats: {
-      passes: 0,
-      passAccuracy: 0,
-      shots: 0,
-      shotsOnTarget: 0,
-      tackles: 0,
-      distance: 0,
-      speed: 0,
-      sprints: 156, // Career matches
-    },
-    fieldPosition: { x: 95, y: 70 },
-  },
-];
-
-// Initial card positions on screen (fallback when tracking unavailable)
-const initialCardPositions: Record<string, { x: number; y: number }> = {
-  'referee': { x: 600, y: 200 },
-  'penalty-taker': { x: 100, y: 300 },
-  'goalkeeper': { x: 1000, y: 150 },
-  'assistant-referee': { x: 1000, y: 350 },
-};
-
-// Card dimensions for offset calculations
-const CARD_WIDTH = 180;
-const CARD_HEIGHT = 160;
+const UI_CLOCK_INTERVAL_MS = 100;
 
 export function StreamPage() {
   const navigate = useNavigate();
@@ -149,83 +44,67 @@ export function StreamPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [showPOVCards, setShowPOVCards] = useState(false);
-  const [penaltyData, setPenaltyData] = useState(initialPenaltyData);
-  const [goalScored, setGoalScored] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [activePreset, setActivePreset] = useState<PresetCameraId | null>(null);
+  const [placedCameras, setPlacedCameras] = useState<PlacedCamera[]>([]);
+  const [placementMode, setPlacementMode] = useState(false);
+  const [placementHeight, setPlacementHeight] = useState(1.8);
+  const [placementTrack, setPlacementTrack] = useState(true);
+  const [ghostMode, setGhostMode] = useState(false);
+  const [worldFrozen, setWorldFrozen] = useState(false);
+  const [replayPoint, setReplayPoint] = useState<CompiledPoint | null>(null);
+  const [rgbVideo, setRgbVideo] = useState<HTMLVideoElement | null>(null);
 
   const streamRef = useRef<StreamContainerRef>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const liveTime = useRef(0);
+  const sceneTime = useRef(0);
+  const lastUIClockUpdateRef = useRef(-Infinity);
+  const compiledMatch = useMemo(() => getCompiledTennisMatch(), []);
+  const { manifest, loaded: mediaLoaded } = usePovManifest();
+  const streamMedia = useMemo(
+    () => resolveStreamMedia(manifest, TENNIS_MATCH.source.youtubeId),
+    [manifest],
+  );
+  const replayOpen = replayPoint !== null;
+  const worldFrozenRef = useRef(false);
+  const replayOpenRef = useRef(false);
 
-  // Get tracking positions synced with video time
-  const { positions: trackingPositions } = usePlayerTracking(currentTime);
-
-  // Update container size on mount and resize
   useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        setContainerSize({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight,
-        });
-      }
-    };
-
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
-
-  // Detect goal scored at 8 seconds
-  useEffect(() => {
-    if (currentTime >= GOAL_TIME && !goalScored) {
-      setGoalScored(true);
-      setShowConfetti(true);
-      setPenaltyData(prev => ({
-        ...prev,
-        homePenalties: {
-          scored: 1,
-          taken: 1,
-          saved: 0,
-        },
-        isHomeTurn: false,
-      }));
-      // Announce goal for screen readers
-      announce('Goal! Bruno Fernandes scores for Manchester United!', 'assertive');
-      // Auto-hide confetti after animation
-      setTimeout(() => setShowConfetti(false), 4000);
-    }
-    // Reset if video is rewound before goal time
-    if (currentTime < GOAL_TIME && goalScored) {
-      setGoalScored(false);
-      setShowConfetti(false);
-      setPenaltyData(initialPenaltyData);
-    }
-  }, [currentTime, goalScored, announce]);
-
-  // Calculate card positions from tracking data
-  const getCardPosition = (playerId: string) => {
-    const tracking = trackingPositions[playerId];
-
-    if (tracking?.visible && containerSize.width > 0) {
-      // Convert percentage to pixels, position card above player's head
-      const VERTICAL_OFFSET = 95; // Extra offset to clear the player's head
-      return {
-        x: (tracking.x / 100) * containerSize.width - CARD_WIDTH / 2,
-        y: (tracking.y / 100) * containerSize.height - CARD_HEIGHT - VERTICAL_OFFSET,
-      };
-    }
-
-    // Fallback to initial positions if tracking not available
-    return initialCardPositions[playerId] || { x: 0, y: 0 };
-  };
+    worldFrozenRef.current = worldFrozen;
+    replayOpenRef.current = replayOpen;
+  }, [replayOpen, worldFrozen]);
 
   const handleTimeUpdate = useCallback((time: number, dur: number) => {
-    setCurrentTime(time);
-    setDuration(dur);
+    liveTime.current = time;
+    if (!worldFrozenRef.current && !replayOpenRef.current) {
+      sceneTime.current = time;
+    }
+
+    const now = performance.now();
+    if (now - lastUIClockUpdateRef.current >= UI_CLOCK_INTERVAL_MS) {
+      lastUIClockUpdateRef.current = now;
+      setCurrentTime(time);
+      setDuration(dur);
+    }
   }, []);
+
+  const handlePointEnd = useCallback((point: CompiledPoint) => {
+    streamRef.current?.pause();
+    setGhostMode(false);
+    setPlacementMode(false);
+    setReplayPoint(point);
+    const measurement = replayMeasurement(point);
+    announce(
+      `${point.point.replayLabel}. ${measurement.display}.`,
+      'assertive',
+    );
+  }, [announce]);
+
+  const matchState = useMatchState({
+    mediaTime: currentTime,
+    compiledMatch,
+    enabled: !replayOpen,
+    onPointEnd: handlePointEnd,
+  });
 
   const handleStateChange = useCallback((playing: boolean) => {
     setIsPlaying(playing);
@@ -240,30 +119,212 @@ export function StreamPage() {
   };
 
   const handleSeek = (time: number) => {
+    liveTime.current = time;
+    if (!worldFrozen) {
+      sceneTime.current = time;
+    }
+    lastUIClockUpdateRef.current = performance.now();
+    setCurrentTime(time);
     streamRef.current?.seekTo(time);
   };
 
-  const handleFullscreen = () => {
-    document.documentElement.requestFullscreen?.();
+  const dismissReplay = useCallback(() => {
+    setReplayPoint(null);
+    streamRef.current?.play();
+    announce('Broadcast resumed.', 'polite');
+  }, [announce]);
+
+  const handleFrozenChange = useCallback((frozen: boolean) => {
+    if (frozen) {
+      sceneTime.current = liveTime.current;
+    }
+    setWorldFrozen(frozen);
+    announce(frozen ? 'Court frozen.' : 'Court live.', 'polite');
+  }, [announce]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (replayOpen || ghostMode || placementMode) {
+        return;
+      }
+      if (event.key === 'g' || event.key === 'G') {
+        event.preventDefault();
+        setPlacementMode(false);
+        setGhostMode(true);
+        announce('Ghost explore mode.', 'polite');
+      }
+      if (event.key === 'p' || event.key === 'P') {
+        event.preventDefault();
+        setGhostMode(false);
+        setPlacementMode(true);
+        announce('Camera placement mode. Click the court to pin a camera.', 'polite');
+      }
+      if (/^[1-6]$/.test(event.key)) {
+        const preset = PRESET_CAMERA_IDS[Number(event.key) - 1];
+        if (preset) {
+          setActivePreset((current) => (current === preset ? null : preset));
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [announce, ghostMode, placementMode, replayOpen]);
+
+  const handlePlace = (x: number, z: number) => {
+    const camera = createPlacedCamera({
+      x,
+      z,
+      height: placementHeight,
+      trackBall: placementTrack,
+    });
+    setPlacedCameras((current) => [...current, camera]);
+    announce('Pinned camera added.', 'polite');
   };
 
-  const handlePlayerExpand = (player: Player) => {
-    setSelectedPlayer(player);
-  };
-
-  const handleCloseOverlay = () => {
-    setSelectedPlayer(null);
-  };
+  if (!mediaLoaded) {
+    return (
+      <div className="app">
+        <AccessibilityToggle />
+      </div>
+    );
+  }
 
   return (
-    <div className="app" ref={containerRef}>
+    <div className="app">
       <StreamContainer
         ref={streamRef}
-        videoSrc={brunoVideo}
+        youtubeId={streamMedia.youtubeId}
+        videoSrc={streamMedia.videoSrc}
         onTimeUpdate={handleTimeUpdate}
         onStateChange={handleStateChange}
+        onVideoElement={setRgbVideo}
       >
-        {/* Home Button */}
+        <PovReconstructionProvider
+          manifest={manifest}
+          rgbVideo={rgbVideo}
+          timeSource={sceneTime}
+          playing={isPlaying && !replayOpen}
+        >
+          <SceneRoot className="tennis-pov-layer">
+          <div className="tennis-pov-cards">
+            <POVCard
+              side="near"
+              timeSource={sceneTime}
+              currentTime={currentTime}
+              compiledMatch={compiledMatch}
+            />
+            <POVCard
+              side="far"
+              timeSource={sceneTime}
+              currentTime={currentTime}
+              compiledMatch={compiledMatch}
+            />
+          </div>
+
+          {activePreset ? (
+            <PresetCameraCard
+              presetId={activePreset}
+              timeSource={sceneTime}
+              compiledMatch={compiledMatch}
+              index={10}
+            />
+          ) : null}
+
+          {placedCameras.length > 0 ? (
+            <div className="camera-stack">
+              {placedCameras.map((camera, index) => (
+                <PlacedCameraCard
+                  key={camera.id}
+                  camera={camera}
+                  timeSource={sceneTime}
+                  compiledMatch={compiledMatch}
+                  index={20 + index}
+                  onHeightChange={(height) => {
+                    setPlacedCameras((current) =>
+                      current.map((item) =>
+                        item.id === camera.id ? { ...item, height } : item,
+                      ),
+                    );
+                  }}
+                  onTrackChange={(trackBall) => {
+                    setPlacedCameras((current) =>
+                      current.map((item) =>
+                        item.id === camera.id ? { ...item, trackBall } : item,
+                      ),
+                    );
+                  }}
+                  onRemove={() => {
+                    setPlacedCameras((current) =>
+                      current.filter((item) => item.id !== camera.id),
+                    );
+                  }}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          {placementMode ? (
+            <PlacementMode
+              timeSource={sceneTime}
+              compiledMatch={compiledMatch}
+              height={placementHeight}
+              trackBall={placementTrack}
+              onHeightChange={setPlacementHeight}
+              onTrackChange={setPlacementTrack}
+              onPlace={handlePlace}
+              onClose={() => setPlacementMode(false)}
+            />
+          ) : null}
+
+          {ghostMode ? (
+            <GhostControls
+              timeSource={sceneTime}
+              compiledMatch={compiledMatch}
+              frozen={worldFrozen}
+              onFrozenChange={handleFrozenChange}
+              onExit={() => {
+                setGhostMode(false);
+                setWorldFrozen(false);
+              }}
+            />
+          ) : null}
+
+          {replayPoint ? (
+            <ReplayOverlay
+              key={replayPoint.point.id}
+              compiledPoint={replayPoint}
+              compiledMatch={compiledMatch}
+              onDismiss={dismissReplay}
+            />
+          ) : null}
+          </SceneRoot>
+        </PovReconstructionProvider>
+
+        <TennisScoreboard
+          match={compiledMatch.match}
+          score={matchState.score}
+          currentPoint={matchState.currentPoint}
+        />
+
+        {!replayOpen && !ghostMode && !placementMode ? (
+        <CameraRail
+          activePreset={activePreset}
+          placementActive={placementMode}
+          ghostActive={ghostMode}
+          onSelectPreset={(id) =>
+            setActivePreset((current) => (current === id ? null : id))
+          }
+          onTogglePlacement={() => {
+            setGhostMode(false);
+            setPlacementMode((value) => !value);
+          }}
+          onToggleGhost={() => {
+            setPlacementMode(false);
+            setGhostMode((value) => !value);
+          }}
+        />
+        ) : null}
+
         <button
           className="home-button"
           onClick={() => navigate('/')}
@@ -275,63 +336,7 @@ export function StreamPage() {
           <span>Back</span>
         </button>
 
-        {/* Toggle POV Cards Button */}
-        <button
-          className="toggle-pov-button"
-          onClick={() => setShowPOVCards(!showPOVCards)}
-          aria-label={showPOVCards ? 'Hide POV cards' : 'Show POV cards'}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            {showPOVCards ? (
-              <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>
-            ) : (
-              <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></>
-            )}
-          </svg>
-          <span>{showPOVCards ? 'POV' : 'POV'}</span>
-        </button>
-
-        <PenaltyScoreOverlay
-          homeTeam={penaltyData.homeTeam}
-          awayTeam={penaltyData.awayTeam}
-          homePenalties={penaltyData.homePenalties}
-          awayPenalties={penaltyData.awayPenalties}
-          currentRound={penaltyData.currentRound}
-          isHomeTurn={penaltyData.isHomeTurn}
-          justScored={goalScored ? 'home' : null}
-        />
-
         <LiveBadge />
-
-        {/* Goal Confetti */}
-        <GoalConfetti active={showConfetti} />
-
-        {/* POV Player Cards - positioned by tracking */}
-        {showPOVCards && getPlayers(goalScored).map((player, index) => {
-          const pos = getCardPosition(player.id);
-          const isVisible = trackingPositions[player.id]?.visible !== false;
-
-          return (
-            <div
-              key={player.id}
-              className="player-card-wrapper"
-              style={{
-                left: pos.x,
-                top: pos.y,
-                animationDelay: `${index * 100}ms`,
-                opacity: isVisible ? 1 : 0.3,
-                transition: 'left 0.15s linear, top 0.15s linear',
-              }}
-            >
-              <PlayerCard
-                player={player}
-                onExpand={handlePlayerExpand}
-                mainVideoTime={currentTime}
-                isMainPlaying={isPlaying}
-              />
-            </div>
-          );
-        })}
 
         <VideoControls
           currentTime={currentTime}
@@ -339,19 +344,11 @@ export function StreamPage() {
           isPlaying={isPlaying}
           onPlayPause={handlePlayPause}
           onSeek={handleSeek}
-          onFullscreen={handleFullscreen}
+          onFullscreen={() => {
+            document.documentElement.requestFullscreen?.();
+          }}
         />
       </StreamContainer>
-
-      {/* POV Video Overlay */}
-      {selectedPlayer && (
-        <POVVideoOverlay
-          player={selectedPlayer}
-          onClose={handleCloseOverlay}
-          mainVideoTime={currentTime}
-          isMainPlaying={isPlaying}
-        />
-      )}
 
       <AccessibilityToggle />
     </div>

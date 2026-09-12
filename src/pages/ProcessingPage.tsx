@@ -5,23 +5,32 @@ import { AccessibilityToggle } from '../components/shared/AccessibilityToggle';
 import '../components/processing/processing-glass.css';
 
 const statusMessages = [
-  'Initializing neural tracking...',
-  'Detecting player positions...',
-  'Calibrating POV cameras...',
-  'Processing depth mapping...',
-  'Synchronizing feeds...',
-  'Stream ready',
+  'Reconstructing court geometry...',
+  'Solving ball trajectories...',
+  'Calibrating Hawk-Eye cameras...',
+  'Synchronizing the broadcast clock...',
+  'Locking player court-eye feeds...',
+  'Court ready',
 ];
 
-const DURATION = 30000; // 30 seconds total
+const MESSAGE_THRESHOLDS = [0, 15, 35, 55, 75, 95];
+const DURATION = 30000;
 const STORAGE_KEY = 'processing_start_time';
 
 export function ProcessingPage() {
   const navigate = useNavigate();
   const { gameId } = useParams<{ gameId: string }>();
   const [progress, setProgress] = useState(0);
-  const [messageIndex, setMessageIndex] = useState(0);
   const startTimeRef = useRef<number>(0);
+  const messageIndex = Math.max(
+    0,
+    MESSAGE_THRESHOLDS.findIndex(
+      (threshold, i) =>
+        progress >= threshold &&
+        (i === MESSAGE_THRESHOLDS.length - 1 ||
+          progress < MESSAGE_THRESHOLDS[i + 1]!),
+    ),
+  );
 
   useEffect(() => {
     // Check if we have a stored start time, otherwise create one
@@ -47,19 +56,6 @@ export function ProcessingPage() {
 
     return () => clearInterval(progressInterval);
   }, [gameId]);
-
-  useEffect(() => {
-    // Update message based on progress
-    const messageThresholds = [0, 15, 35, 55, 75, 95];
-    const newIndex = messageThresholds.findIndex(
-      (threshold, i) =>
-        progress >= threshold &&
-        (i === messageThresholds.length - 1 || progress < messageThresholds[i + 1])
-    );
-    if (newIndex !== -1 && newIndex !== messageIndex) {
-      setMessageIndex(newIndex);
-    }
-  }, [progress, messageIndex]);
 
   useEffect(() => {
     // Navigate to stream when complete
@@ -94,7 +90,7 @@ export function ProcessingPage() {
             message={statusMessages[messageIndex]}
           />
 
-          <p className="processing-hint" aria-live="polite">Preparing immersive experience</p>
+          <p className="processing-hint" aria-live="polite">Preparing the Hawk-Eye court</p>
         </div>
       </div>
 

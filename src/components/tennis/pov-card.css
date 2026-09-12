@@ -1,0 +1,444 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist+Mono:wght@400;500;600&display=swap');
+
+.tennis-pov-layer {
+  position: absolute !important;
+  inset: 0;
+  z-index: 8;
+  min-height: 0 !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+.tennis-pov-cards {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.pov-card {
+  --pov-ink: #070b0a;
+  --pov-charcoal: #121817;
+  --pov-green: #083b2a;
+  --pov-chalk: #edf1e8;
+  --pov-muted: #99a49c;
+  --pov-optic: #dfff32;
+  --pov-card-width: 19rem;
+
+  position: absolute;
+  width: var(--pov-card-width);
+  overflow: hidden;
+  color: var(--pov-chalk);
+  background: transparent;
+  border: 1px solid rgba(237, 241, 232, 0.18);
+  border-radius: 5px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.36);
+  pointer-events: none;
+  transition:
+    width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    box-shadow 220ms ease;
+}
+
+.pov-card--near {
+  top: 43%;
+  left: clamp(1.25rem, 3vw, 3.5rem);
+}
+
+.pov-card--far {
+  top: 15%;
+  right: clamp(1.25rem, 3.5vw, 4rem);
+}
+
+.pov-card--expanded {
+  --pov-card-width: min(27rem, calc(100vw - 3rem));
+  z-index: 3;
+}
+
+.pov-card:has(.pov-card__expand:hover),
+.pov-card:has(.pov-card__expand:focus-visible) {
+  transform: translateY(-4px);
+  border-color: rgba(223, 255, 50, 0.5);
+  box-shadow:
+    0 23px 52px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.pov-card__signal-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 2rem;
+  padding: 0 2.7rem 0 0.68rem;
+  background: linear-gradient(90deg, var(--pov-green), rgba(8, 59, 42, 0.88));
+  border-bottom: 1px solid rgba(237, 241, 232, 0.11);
+  backdrop-filter: blur(18px) saturate(0.78);
+  -webkit-backdrop-filter: blur(18px) saturate(0.78);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.pov-card__live,
+.pov-card__mode {
+  display: inline-flex;
+  align-items: center;
+}
+
+.pov-card__live {
+  gap: 0.42rem;
+}
+
+.pov-card__live-dot {
+  width: 0.38rem;
+  height: 0.38rem;
+  background: var(--pov-optic);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(7, 11, 10, 0.7);
+}
+
+.pov-card__mode {
+  margin-left: auto;
+  color: rgba(237, 241, 232, 0.68);
+}
+
+.pov-card__mode::before {
+  width: 1.35rem;
+  height: 1px;
+  margin-right: 0.48rem;
+  background: rgba(237, 241, 232, 0.22);
+  content: '';
+}
+
+.pov-card__viewport-shell {
+  position: relative;
+  height: 9.7rem;
+  overflow: hidden;
+  background: transparent;
+  border-bottom: 1px solid rgba(237, 241, 232, 0.12);
+  transition: height 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pov-card--expanded .pov-card__viewport-shell {
+  height: 15rem;
+}
+
+.pov-card__viewport {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  pointer-events: none !important;
+}
+
+.pov-depth-video {
+  position: absolute;
+  width: 64px;
+  height: 36px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pov-card__viewfinder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid rgba(223, 255, 50, 0.45);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.pov-card__viewfinder::before,
+.pov-card__viewfinder::after {
+  position: absolute;
+  background: var(--pov-optic);
+  opacity: 0.7;
+  content: '';
+}
+
+.pov-card__viewfinder::before {
+  top: 50%;
+  left: -0.42rem;
+  width: calc(100% + 0.84rem);
+  height: 1px;
+}
+
+.pov-card__viewfinder::after {
+  top: -0.42rem;
+  left: 50%;
+  width: 1px;
+  height: calc(100% + 0.84rem);
+}
+
+.pov-card__crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 0.28rem;
+  height: 0.28rem;
+  background: var(--pov-optic);
+  border: 1px solid rgba(7, 11, 10, 0.9);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.pov-card__lock {
+  position: absolute;
+  right: 0.18rem;
+  bottom: 0.12rem;
+  color: var(--pov-optic);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.43rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pov-card__measurement {
+  position: absolute;
+  right: 0.52rem;
+  bottom: 0.4rem;
+  padding: 0.2rem 0.3rem;
+  color: rgba(237, 241, 232, 0.78);
+  background: rgba(7, 11, 10, 0.68);
+  border-left: 2px solid var(--pov-optic);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.46rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.pov-card__identity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 4.2rem;
+  padding: 0.62rem 0.72rem 0.68rem;
+  background:
+    linear-gradient(115deg, rgba(21, 29, 27, 0.94), rgba(7, 11, 10, 0.96)),
+    var(--pov-ink);
+  backdrop-filter: blur(18px) saturate(0.78);
+  -webkit-backdrop-filter: blur(18px) saturate(0.78);
+}
+
+.pov-card__player {
+  min-width: 0;
+}
+
+.pov-card__player h2 {
+  overflow: hidden;
+  color: var(--pov-chalk);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.42rem;
+  font-weight: 400;
+  line-height: 0.96;
+  letter-spacing: 0.045em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pov-card__player p {
+  margin-top: 0.34rem;
+  overflow: hidden;
+  color: var(--pov-muted);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.47rem;
+  line-height: 1.2;
+  letter-spacing: 0.07em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pov-card__stat {
+  min-width: 5.6rem;
+  padding-left: 0.65rem;
+  border-left: 1px solid rgba(237, 241, 232, 0.15);
+  text-align: right;
+}
+
+.pov-card__stat dt {
+  color: var(--pov-muted);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.44rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.pov-card__stat dd {
+  margin-top: 0.22rem;
+  color: var(--pov-optic);
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.pov-card__expand {
+  position: absolute;
+  top: 0.24rem;
+  right: 0.28rem;
+  z-index: 4;
+  display: grid;
+  width: 1.52rem;
+  height: 1.52rem;
+  padding: 0;
+  place-items: center;
+  color: rgba(237, 241, 232, 0.72);
+  background: rgba(7, 11, 10, 0.5);
+  border: 1px solid rgba(237, 241, 232, 0.14);
+  border-radius: 3px;
+  pointer-events: auto;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.pov-card__expand:hover {
+  color: var(--pov-optic);
+  background: rgba(7, 11, 10, 0.82);
+  border-color: rgba(223, 255, 50, 0.54);
+}
+
+.pov-card__expand:focus-visible {
+  color: var(--pov-optic);
+  outline: 2px solid var(--pov-optic);
+  outline-offset: 2px;
+}
+
+.pov-card__expand svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+@media (max-width: 1100px) {
+  .pov-card {
+    --pov-card-width: 17.5rem;
+  }
+
+  .pov-card--near {
+    top: 46%;
+    left: 1.1rem;
+  }
+
+  .pov-card--far {
+    top: 16%;
+    right: 1.1rem;
+  }
+
+  .pov-card--expanded {
+    --pov-card-width: min(23rem, calc(100vw - 2.2rem));
+  }
+
+  .pov-card__viewport-shell {
+    height: 8.8rem;
+  }
+
+  .pov-card--expanded .pov-card__viewport-shell {
+    height: 12.8rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .tennis-pov-cards {
+    top: 5.2rem;
+    right: 0.65rem;
+    bottom: auto;
+    left: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .pov-card,
+  .pov-card--near,
+  .pov-card--far,
+  .pov-card--expanded {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    width: 100%;
+  }
+
+  .pov-card--near {
+    order: 1;
+  }
+
+  .pov-card--far {
+    order: 2;
+  }
+
+  .pov-card__signal-bar {
+    height: 1.7rem;
+  }
+
+  .pov-card__viewport-shell {
+    height: 5.4rem;
+  }
+
+  .pov-card--expanded .pov-card__viewport-shell {
+    height: 9.2rem;
+  }
+
+  .pov-card__identity {
+    min-height: 3.35rem;
+    padding-block: 0.48rem;
+  }
+
+  .pov-card__player h2 {
+    font-size: 1.18rem;
+  }
+
+  .pov-card__viewfinder {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+}
+
+@media (max-width: 400px), (max-height: 600px) {
+  .tennis-pov-cards {
+    top: 4.6rem;
+    gap: 0.36rem;
+  }
+
+  .pov-card__viewport-shell {
+    height: 4.4rem;
+  }
+
+  .pov-card--expanded .pov-card__viewport-shell {
+    height: 7rem;
+  }
+
+  .pov-card__identity {
+    min-height: 3rem;
+  }
+
+  .pov-card__player p {
+    max-width: 10rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pov-card,
+  .pov-card__viewport-shell,
+  .pov-card__expand {
+    transition: none;
+  }
+
+  .pov-card:has(.pov-card__expand:hover),
+  .pov-card:has(.pov-card__expand:focus-visible) {
+    transform: none;
+  }
+}

@@ -2,107 +2,106 @@ import { GameCard, type Game } from '../components/games/GameCard';
 import { AccessibilityToggle } from '../components/shared/AccessibilityToggle';
 import '../components/games/games-glass.css';
 
-// Sample games data
 const games: Game[] = [
   {
-    id: 'mun-ars-facup',
+    id: '2025-us-open-final-sinner-alcaraz',
     homeTeam: {
-      name: 'Manchester United',
-      shortName: 'MUN',
-      color: '#DA291C',
+      name: 'Carlos Alcaraz',
+      shortName: 'ALC',
+      color: '#8d2942',
     },
     awayTeam: {
-      name: 'Arsenal',
-      shortName: 'ARS',
-      color: '#EF0107',
+      name: 'Jannik Sinner',
+      shortName: 'SIN',
+      color: '#203d5a',
     },
-    competition: 'FA Cup',
-    competitionShort: 'FA CUP',
-    time: '17:30',
+    competition: 'US Open Final',
+    competitionShort: 'USO',
+    time: 'Live',
     status: 'live',
   },
   {
-    id: 'liv-che-prem',
+    id: 'wimbledon-swiatek-gauff',
     homeTeam: {
-      name: 'Liverpool',
-      shortName: 'LIV',
-      color: '#C8102E',
+      name: 'Iga Swiatek',
+      shortName: 'SWI',
+      color: '#d45d00',
     },
     awayTeam: {
-      name: 'Chelsea',
-      shortName: 'CHE',
-      color: '#034694',
+      name: 'Coco Gauff',
+      shortName: 'GAU',
+      color: '#1c3d7a',
     },
-    competition: 'Premier League',
-    competitionShort: 'PREM',
-    time: '20:00',
+    competition: 'Wimbledon',
+    competitionShort: 'WIM',
+    time: '14:00',
     status: 'live',
   },
   {
-    id: 'mci-tot-prem',
+    id: 'rg-sabalenka-paolini',
     homeTeam: {
-      name: 'Manchester City',
-      shortName: 'MCI',
-      color: '#6CABDD',
+      name: 'Aryna Sabalenka',
+      shortName: 'SAB',
+      color: '#c8102e',
     },
     awayTeam: {
-      name: 'Tottenham Hotspur',
-      shortName: 'TOT',
-      color: '#132257',
+      name: 'Jasmine Paolini',
+      shortName: 'PAO',
+      color: '#0b6e4f',
     },
-    competition: 'Premier League',
-    competitionShort: 'PREM',
-    time: '15:00',
+    competition: 'Roland-Garros',
+    competitionShort: 'RG',
+    time: '16:30',
     status: 'upcoming',
   },
   {
-    id: 'bar-rma-laliga',
+    id: 'ao-djokovic-sinner',
     homeTeam: {
-      name: 'Barcelona',
-      shortName: 'BAR',
-      color: '#A50044',
+      name: 'Novak Djokovic',
+      shortName: 'DJO',
+      color: '#1d4e89',
     },
     awayTeam: {
-      name: 'Real Madrid',
-      shortName: 'RMA',
-      color: '#FEBE10',
+      name: 'Jannik Sinner',
+      shortName: 'SIN',
+      color: '#203d5a',
     },
-    competition: 'La Liga',
-    competitionShort: 'LA LIGA',
-    time: '20:00',
+    competition: 'Australian Open',
+    competitionShort: 'AO',
+    time: 'Tonight',
     status: 'upcoming',
   },
   {
-    id: 'psg-bay-ucl',
+    id: 'iw-alcaraz-fritz',
     homeTeam: {
-      name: 'Paris Saint-Germain',
-      shortName: 'PSG',
-      color: '#004170',
+      name: 'Carlos Alcaraz',
+      shortName: 'ALC',
+      color: '#8d2942',
     },
     awayTeam: {
-      name: 'Bayern Munich',
-      shortName: 'BAY',
-      color: '#DC052D',
+      name: 'Taylor Fritz',
+      shortName: 'FRI',
+      color: '#0a3161',
     },
-    competition: 'Champions League',
-    competitionShort: 'UCL',
+    competition: 'Indian Wells',
+    competitionShort: 'IW',
     time: 'Tomorrow',
     status: 'upcoming',
   },
   {
-    id: 'juv-int-seria',
+    id: 'uso24-sabalenka-pegula',
     homeTeam: {
-      name: 'Juventus',
-      shortName: 'JUV',
-      color: '#000000',
+      name: 'Aryna Sabalenka',
+      shortName: 'SAB',
+      color: '#c8102e',
     },
     awayTeam: {
-      name: 'Inter Milan',
-      shortName: 'INT',
-      color: '#010E80',
+      name: 'Jessica Pegula',
+      shortName: 'PEG',
+      color: '#00205b',
     },
-    competition: 'Serie A',
-    competitionShort: 'SERIE A',
+    competition: 'US Open',
+    competitionShort: 'USO',
     time: 'FT 2-1',
     status: 'replay',
   },
@@ -113,7 +112,6 @@ export function GamesPage() {
 
   return (
     <div className="games-page">
-      {/* Skip link for keyboard navigation */}
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
@@ -123,7 +121,7 @@ export function GamesPage() {
           <span className="games-logo" aria-hidden="true">ph</span>
           <h1 className="games-brand-title">Project Horizon</h1>
         </div>
-        <p className="games-tagline">See the game through<br />the eyes of those who play it</p>
+        <p className="games-tagline">See the point through<br />the eyes of those who play it</p>
 
         {liveCount > 0 && (
           <div className="games-header-live" role="status" aria-live="polite">
@@ -136,7 +134,7 @@ export function GamesPage() {
 
       <main id="main-content" role="main">
         <h2 className="sr-only">Available Matches</h2>
-        <div className="games-grid" role="list" aria-label="Football matches">
+        <div className="games-grid" role="list" aria-label="Tennis matches">
           {games.map((game) => (
             <GameCard key={game.id} game={game} />
           ))}
